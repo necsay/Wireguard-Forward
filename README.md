@@ -16,5 +16,5 @@ To do:
   <li>Logs.</li>
   <li>Rolling back changes.</li>
   <li>Graphical/Selectible cli.</li>
-  <li>Better interface management.</li>
+  <li>Interface management.</li>
 </ol>
