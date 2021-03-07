@@ -197,14 +197,14 @@ port_re='^[0-9]?[0-9]?[0-9]?[0-9]$|^[0-5]?[0-9]?[0-9]?[0-9]?[0-9]$|^[6]?[0-4]?[0
 
 echo -e "Please enter the internal port that will be forwarded"
 read sv_port
-while [[ sv_port =~ $port_re ]]; do
+while [[ ! sv_port =~ $port_re ]]; do
 echo -e "Error: Port not valid, please enter again:"
 read sv_port
 done
 
 echo -e "Please enter the external port that will be listening"
 read cl_port
-while [[ cl_port =~ $port_re ]]; do
+while [[ ! cl_port =~ $port_re ]]; do
 echo -e "Error: Port not valid, please enter:"
 read cl_port
 done
