@@ -8,7 +8,8 @@
   <li>Sets up iptables rules for forwarding on WireGuard config file.</li>
 </ol>
 
-The script is not yet fully tested, However this script does not remove anything, not a single line.
+The script is not yet fully tested. However, it does not delete anything, not a single line.
+
 
 To do:
 <ol>
