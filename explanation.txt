@@ -1,0 +1,66 @@
+Objective: Forward VPN Server traffic to client Server using nondefault ports.
+
+VPN Server vpn IP: 10.0.10.1
+
+VPN Server vpn interface: wg0
+
+VPN Server public IP interface: eth0
+
+Home/Web Server vpn IP: 10.0.10.2
+
+Home/Web Server RDP/HTTP/HTTPS ports: All default: 80/443
+
+
+
+IP to forward: From 10.0.10.1 to 10.0.10.2 on wg0 vpn interface.
+
+Ports to forward: 33333 to 80, 44444 to 443
+
+
+Prerequisites:
+
+The Client WireGuard peer must be set up, naturally.
+You need to have ipv4 forwarding enabled from /etc/sysctl.conf 
+However, this method is deprecated the better way is creating a conf file under
+/etc/sysctl.d/example.conf
+and add the line
+net.ipv4.ip_forward = 1
+
+from script: echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/wireguard.conf
+
+You need to have ufw disabled or you can run ufw and set up appropriate rules (recommended):
+
+Allow ports:
+ufw allow 33333
+ufw allow 44444
+Allow forwarding for ports:
+
+ufw route allow in on eth0 out on wg0 to 10.0.10.2 port 80 proto tcp
+ufw route allow in on eth0 out on wg0 to 10.0.10.2 port 443 proto tcp
+
+Note: You can also use 
+ufw route allow in on eth0 out on wg0 to 10.0.10.2 port 80
+to allow both udp and tcp
+However, proto tcp is recommended for this case because forwarding method below is also tcp.
+
+To be put under [Interface] section:
+
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 
+#This line is required for VPN to work and probably is already in there, my script does not add this line.
+
+#Forwarding starts
+#Forward HTTP PublicIp:33333 to 10.0.10.2:80
+PostUp = iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 33333 -j DNAT --to-destination 10.0.10.2:80
+PostUp = iptables -A FORWARD -i eth0 -o wg0 -p tcp --syn --dport 33333 -m conntrack --ctstate NEW -j ACCEPT
+PostUp = iptables -A FORWARD -i eth0 -o wg0 -p tcp --dport 33333 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+PostUp = iptables -A FORWARD -i wg0 -o eth0 -p tcp --sport 80 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+PostUp = iptables -t nat -A POSTROUTING -o wg0 -p tcp --dport 33333 -d 10.0.10.2 -j SNAT --to-source 10.0.10.1
+
+#Forward HTTPS PublicIp:44444 to 10.0.10.2:443
+PostUp = iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 44444 -j DNAT --to-destination 10.0.10.2:443
+PostUp = iptables -A FORWARD -i eth0 -o wg0 -p tcp --syn --dport 44444 -m conntrack --ctstate NEW -j ACCEPT
+PostUp = iptables -A FORWARD -i eth0 -o wg0 -p tcp --dport 44444 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+PostUp = iptables -A FORWARD -i wg0 -o eth0 -p tcp --sport 443 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+PostUp = iptables -t nat -A POSTROUTING -o wg0 -p tcp --dport 44444 -d 10.0.10.2 -j SNAT --to-source 10.0.10.1
+
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE #This line is not included in my script either.
