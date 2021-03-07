@@ -244,6 +244,13 @@ wg-quick down $wg_interface
 sleep 5
 
 echo -e "Requests coming to port $sv_port will be forwarded to $cl_ip:$cl_port"
+echo -e "Do you wish to proceed?"
+select yn in "Yes" "No"; do
+	case $yn in
+		Yes ) break;;
+		No ) echo -e "Terminated by user; exit;;
+	esac
+done
 
 insert="PostUp = iptables -t nat -A PREROUTING -i $sv_interface -p tcp --dport $sv_port -j DNAT --to-destination $cl_ip:$cl_port\nPostUp = iptables -A FORWARD -i $sv_interface -o $wg_interface -p tcp --syn --dport $sv_port -m conntrack --ctstate NEW -j ACCEPT\nPostUp = iptables -A FORWARD -i $sv_interface -o $wg_interface -p tcp --dport $sv_port -m conntrack --ctstate ESTABLISHED -j ACCEPT\nPostUp = iptables -A FORWARD -i $wg_interface -o $sv_interface -p tcp --sport $cl_port -m conntrack --ctstate ESTABLISHED -j ACCEPT\nPostUp = iptables -t nat -A POSTROUTING -o $wg_interface -p tcp --dport $sv_port -d $cl_ip -j SNAT --to-source $sv_ip"
 sed -i "/\[Interface\]/ a $insert" $file_path
