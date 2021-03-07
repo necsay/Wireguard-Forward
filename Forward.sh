@@ -123,7 +123,7 @@ if [ $conf != "noufw" ]; then
 		done
 	fi
 	ufw=$(ufw status | cut -c9- | tr A-Z a-z)
-	if [ ${ufw} != "active" ]; then
+	if [ $ufw != "active" ]; then
 		echo -e "${ORANGE}Error : Sorry, UFW could not be enabled !"
 		exit
 	fi
