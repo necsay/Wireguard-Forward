@@ -1,6 +1,6 @@
 # Wireguard-Forward
 
-<h3>What this script does?</h3>
+<h3>What this script does:</h3>
 
 <ol>
   <li>Checks if ipv4 forwarding is enabled and enable if it's not running.</li>
