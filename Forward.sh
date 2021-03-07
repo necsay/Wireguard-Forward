@@ -22,12 +22,7 @@ then
     exit
 fi
 
-#Check configuration files
-#conf_files=$(ls -1 /etc/wireguard | egrep '\.conf$')
-#echo $conf_files >/tmp/testing.txt
-
 #Set up path for conf file
-
 file_path="/etc/wireguard/wg0.conf"
 wg_conf="wg0.conf"
 wg_interface="wg0"
@@ -68,7 +63,6 @@ while [ $var1 != "yes" ]; do
 done
 
 # Check forwarding and enable
-
 
 sysctl_state=$(sysctl -a | grep net.ipv4.ip_forward | grep -v 'update\|pmtu' | cut -d "=" -f2 | xargs)
 
@@ -130,7 +124,7 @@ if [ $conf != "noufw" ]; then
 	fi
 	ufw=$(ufw status | cut -c9- | tr A-Z a-z)
 	if [ ${ufw} != "active" ]; then
-		echo -e "${ORANGE}WARNING : Sorry, UFW could not be enabled !"
+		echo -e "${ORANGE}Error : Sorry, UFW could not be enabled !"
 		exit
 	fi
 fi
