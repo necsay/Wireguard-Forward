@@ -206,7 +206,7 @@ echo -e "${RED}Error${NC}: Not a valid port, please try again!"
 read -p "Please enter the internal port that will be forwarded:" sv_port
 done
 
-read -p "Please enter the external port that will be listening" cl_port
+read -p "Please enter the external port that will be listening:" cl_port
 
 while [[ ! $cl_port =~ $port_re ]]; do
 echo -e "${RED}Error${NC}: Not a valid port, please try again!"
@@ -217,11 +217,10 @@ done
 ip_re='^[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]$|^[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]$|^[2]?[5]?[0-4]\.[2]?[5]?[0-4]\.[2]?[5]?[0-4]\.[2]?[5]?[0-4]$'
 
 while true; do 
-	echo -e "Please enter the target IP on VPN:"
-	read cl_ip
+	read -p "Please enter the target IP on VPN:" cl_ip
 	if [[ ! $cl_ip =~ $ip_re ]]; then
-	echo -e "This doesn't look like a valid address, please try again:"
-	read cl_ip
+	echo -e "${RED}Error${NC}: Not a valid address, please try again:"
+	read -p "Please enter the target IP on VPN:" cl_ip
 	fi
 	cl_network=${cl_ip%.*}
 	cl_4th_octet=${cl_ip##*.}
