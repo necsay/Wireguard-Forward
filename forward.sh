@@ -238,7 +238,7 @@ while true; do
 done
 
 #Finalizing
-echo -e "Requests coming to $sv_ip:$sv_port on $sv_interface will be forwarded to $cl_ip:$cl_port on $wg_interface"
+echo -e "Requests coming to $sv_ip:$sv_port on $wg_interface will be forwarded to $cl_ip:$cl_port on $wg_interface"
 
 echo -e "Do you wish to continue?"
 select yn in "Proceed" "Quit"; do
