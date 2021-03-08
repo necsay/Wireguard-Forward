@@ -174,30 +174,54 @@ fi
 sv_network=${sv_ip%.*}
 sv_local=${sv_ip##*.}
 
-# Get interface
+# Get server public interface
 
 
-sv_interface=$(ip r | awk '/^default/ {print $5}')
-	echo -e "Your public IP interface is $sv_interface"
-	select yn in "Correct" "Incorrect"; do
-		case $yn in
-			Correct ) cor="true";break;;
-			Incorrect ) break;;
-		esac
-	done
+declare -a all_interfaces=()
 
-if [ "$cor" != "true" ]; then
-	echo -e "Sorry, please enter interface manually:"
-	read sv_ip
-	echo -e "You have entered $sv_interface"
-	echo -e "Do you wish to proceed?"
-	select yn in "Yes" "No"; do
-		case $yn in
-			Yes ) break;;
-			No ) exit;;
-		esac
-	done
+while read -r line
+do
+	fix=${line#*:}
+	fix=${fix%:*}
+	if [[ ! "$fix" == "lo" ]]; then
+		all_interfaces+=("$fix")    
+	fi
+    
+done < <(ip link show | tr -d '[:blank:]' | awk 'FNR%2')
+
+
+if [ "${all_interfaces[0]}" == "" ]; then
+    echo -e "${RED}Error: There doesn't seem to be any network interfaces${NC}"
+    exit
 fi
+
+sel_re="^[1-${#all_interfaces[@]}]$"
+
+cnter=0
+for i in "${all_interfaces[@]}"
+	do
+	cnter=$((cnter+1))
+	echo -e "$cnter)$i"
+done
+	
+read -p "Please select your config file:" sl_nt
+
+while [[ ! $sl_nt =~ $sel_re ]]; do
+	
+	echo -e "${RED}Error${NC}: Wrong input please try again."
+	cnter=0
+	for i in "${all_interfaces[@]}"
+		do
+		cnter=$((cnter+1))
+		echo -e "$cnter)${i##*/}"
+	done
+	
+	read -p "Please select your config file:" sl_nt
+	
+done
+	
+sl_cf=$((sl_nt-1))
+sv_interface=${all_interfaces[$sl_nt]}
 
 #Get internal port
 port_re='^[0-9]?[0-9]?[0-9]?[0-9]$|^[0-5]?[0-9]?[0-9]?[0-9]?[0-9]$|^[6]?[0-4]?[0-9]?[0-9]?[0-9]$|^[6]?[5]?[0-4]?[0-9]?[0-9]$|^[6]?[5]?[5]?[0-2]?[0-9]$|^[6]?[5]?[5]?[3]?[0-5]$'
