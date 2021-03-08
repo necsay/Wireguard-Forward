@@ -220,7 +220,7 @@ while true; do
 	read -p "Please enter the target IP on VPN:" cl_ip
 	if [[ ! $cl_ip =~ $ip_re ]]; then
 		echo -e "${RED}Error${NC}: Not a valid address, please try again:"
-		read -p "Please enter the target IP on VPN:" cl_ip
+		continue
 	fi
 	cl_network=${cl_ip%.*}
 	cl_4th_octet=${cl_ip##*.}
