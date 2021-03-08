@@ -226,7 +226,7 @@ while true; do
 	cl_4th_octet=${cl_ip##*.}
 
 	if [ $cl_network != $sv_network ]; then
-		echo -e "${RED}Error${NC}: Server is on: $sv_network.x but client is on: $cl_network.x\nOperation out of scope of this script."
+		echo -e "${RED}Error${NC}: Server is on: $sv_network.x but client is on: $cl_network.x\nOperation out of scope of this script. Please try again."
 		continue
 	fi
 	
