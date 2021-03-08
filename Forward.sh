@@ -19,7 +19,7 @@ PS3="Please enter 1 or 2: "
 #Check if WireGuard is installed
 if ! command -v wg &> /dev/null
 then
-    echo -e "\n${RED}WARNING: WireGuard does not seem to be installed.${NC}\n"
+    echo -e "${RED}WARNING: WireGuard does not seem to be installed.${NC}\n"
     exit
 fi
 
@@ -39,7 +39,7 @@ do
 done < <(find /etc/wireguard -maxdepth 1 -name '*.conf')
 
 if [ "${all_paths[0]}" == "" ]; then
-    echo -e "Error: There doesn't seem to be any config files in /etc/wireguard\nThis script is only meant for forwarding ports on a working connection."
+    echo -e "${RED}Error: There doesn't seem to be any config files in /etc/wireguard\nThis script is only meant for forwarding ports on a working connection.${NC}"
     exit
 fi
 
@@ -56,7 +56,7 @@ read -p "Please select your config file:" sl_cf
 
 while [[ ! $sl_cf =~ $sel_re ]]; do
 	
-	echo -e "Error: Wrong input please try again."
+	echo -e "${RED}Error${RED}: Wrong input please try again."
 	cnter=0
 	for i in "${all_paths[@]}"
 		do
