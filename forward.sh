@@ -186,14 +186,14 @@ while [[ ! $sl_nt =~ $sel_re ]]; do
 	for i in "${all_interfaces[@]}"
 		do
 		cnter=$((cnter+1))
-		echo -e "$cnter)${i##*/}"
+		echo -e "$cnter)$i"
 	done
 	
 	read -p "Please select your public IP interface:" sl_nt
 	
 done
 	
-sl_cf=$((sl_nt-1))
+sl_nt=$((sl_nt-1))
 sv_interface=${all_interfaces[$sl_nt]}
 
 #Get internal port
