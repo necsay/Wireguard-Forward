@@ -117,9 +117,9 @@ fi
 
 
 
-if [ $conf != "noufw" ]; then
+if [ "$conf" != "noufw" ]; then
 	ufw=$(ufw status | grep -iF active |cut -d ":" -f2 | xargs | tr A-Z a-z)
-	if [ $ufw != "active" ]; then
+	if [ "$ufw" != "active" ]; then
 		echo -e "\n${ORANGE}WARNING${NC}: UFW is installed but not enabled.\n"
 		echo -e "Do you wish to enable?"
 		echo -e "This script does not require UFW to be running."
@@ -127,14 +127,16 @@ if [ $conf != "noufw" ]; then
 		select yn in "Enable" "Continue"; do
 			case $yn in
 				Enable ) echo -e "${GREEN}"; ufw enable; echo -e "${NC}"; break;;
-				Continue ) break;;
+				Continue ) conf="break"; break;;
 			esac
 		done
 	fi
-	ufw=$(ufw status | grep -iF active |cut -d ":" -f2 | xargs | tr A-Z a-z)
-	if [ $ufw != "active" ]; then
-		echo -e "${ORANGE}ERROR${NC}: Sorry, UFW could not be enabled."
-		exit
+	if [[ "$conf" != "break" ]]; then
+		ufw=$(ufw status | grep -iF active |cut -d ":" -f2 | xargs | tr A-Z a-z)
+		if [ "$ufw" != "active" ]; then
+			echo -e "${ORANGE}ERROR${NC}: Sorry, UFW could not be enabled."
+			exit
+		fi
 	fi
 fi
 
