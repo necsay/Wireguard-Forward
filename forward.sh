@@ -199,18 +199,18 @@ sv_interface=${all_interfaces[$sl_nt]}
 #Get internal port
 port_re='^[0-9]?[0-9]?[0-9]?[0-9]$|^[0-5]?[0-9]?[0-9]?[0-9]?[0-9]$|^[6]?[0-4]?[0-9]?[0-9]?[0-9]$|^[6]?[5]?[0-4]?[0-9]?[0-9]$|^[6]?[5]?[5]?[0-2]?[0-9]$|^[6]?[5]?[5]?[3]?[0-5]$'
 
-echo -e "Please enter the internal port that will be forwarded"
-read sv_port
+read -p "Please enter the internal port that will be forwarded:" sv_port
+
 while [[ ! $sv_port =~ $port_re ]]; do
-echo -e "Error: Port not valid, please enter again:"
-read sv_port
+echo -e "${RED}Error${NC}: Not a valid port, please try again!"
+read -p "Please enter the internal port that will be forwarded:" sv_port
 done
 
-echo -e "Please enter the external port that will be listening"
-read cl_port
+read -p "Please enter the external port that will be listening" cl_port
+
 while [[ ! $cl_port =~ $port_re ]]; do
-echo -e "Error: Port not valid, please enter:"
-read cl_port
+echo -e "${RED}Error${NC}: Not a valid port, please try again!"
+read -p "Please enter the external port that will be listening:" cl_port
 done
 
 #Get target IP
