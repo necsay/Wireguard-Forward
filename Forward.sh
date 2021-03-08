@@ -34,7 +34,7 @@ do
     if [[ ! $test =~ $space_re ]]; then
 	all_paths+=("$line")
     else
-    echo -e "Skipping $line \nReason: No spaces allowed in config file."
+    echo -e "Skipping $line \n${ORANGE}Reason${NC}: No spaces allowed in config file."
     fi
 done < <(find /etc/wireguard -maxdepth 1 -name '*.conf')
 
