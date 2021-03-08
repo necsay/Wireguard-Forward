@@ -80,10 +80,10 @@ sysctl_state=$(sysctl -a | grep net.ipv4.ip_forward | grep -v 'update\|pmtu' | c
 if [ $sysctl_state == "0" ]; then
 	echo -e "${RED}WARNING: ipv4 forwarding is not enabled${NC}"
 	echo -e "Do you wish to enable and continue?\nThe script will not continue unless ipv4 forwarding is enabled."
-	select yn in "Yes" "No"; do
+	select yn in "Enable" "Quit"; do
 		case $yn in
-			Yes ) break;; 
-			No ) exit;;
+			Enable ) break;; 
+			Quit ) exit;;
 		esac
 	done
 	echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/wireguard.conf
@@ -105,12 +105,12 @@ fi
 conf="null"
 if ! command -v ufw &> /dev/null
 then
-    echo -e "\n${RED}WARNING : UFW not found${NC}"
+    echo -e "${RED}WARNING : UFW not found${NC}"
     echo -e "Do you wish to continue?\nIf you install UFW after running this script, forwarding will be blocked."
-	select yn in "Yes" "No"; do
+	select yn in "Continue" "Quit"; do
 	    case $yn in
-	        Yes ) conf="noufw"; break;;
-	        No ) echo "Terminated"; exit;;
+	        Continue ) conf="noufw"; break;;
+	        Quit ) echo "Terminated"; exit;;
 	    esac
 	done
 fi
@@ -124,53 +124,24 @@ if [ $conf != "noufw" ]; then
 		echo -e "Do you wish to enable?"
 		echo -e "This script does not require UFW to be running."
 		echo -e "${ORANGE}WARNING: If you are using SSH you may lose your connection.${NC}"
-		select yn in "Yes" "No"; do
+		select yn in "Enable" "Continue"; do
 			case $yn in
-				Yes ) echo -e "${GREEN}"; ufw enable; echo -e "${NC}"; break;;
-				No ) break;;
+				Enable ) echo -e "${GREEN}"; ufw enable; echo -e "${NC}"; break;;
+				Continue ) break;;
 			esac
 		done
 	fi
 	ufw=$(ufw status | grep -iF active |cut -d ":" -f2 | xargs | tr A-Z a-z)
 	if [ $ufw != "active" ]; then
-		echo -e "${ORANGE}Error : Sorry, UFW could not be enabled !"
+		echo -e "${ORANGE}Error : Sorry, UFW could not be enabled${NC}"
 		exit
 	fi
 fi
 
 
 # Get VPN ip
-ip_re='^[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]$|^[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]$|^[2]?[5]?[0-4]\.[2]?[5]?[0-4]\.[2]?[5]?[0-4]\.[2]?[5]?[0-4]$'
-var3="false"
+
 sv_ip=$(grep -iF "Address" $file_path |  grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
-	echo -e "Your vpn address is $sv_ip"
-	select yn in "Correct" "Incorrect"; do
-		case $yn in
-			Correct ) var3="true"; break;;
-			Incorrect ) break;;
-		esac
-	done
-
-if [ $var3 != "true" ]; then
-	echo -e "Sorry, please enter address manually:"
-	read sv_ip
-fi
-	
-while [[ ! $sv_ip =~ $ip_re ]]; do
-	echo -e "This doesn't look like a valid address, please try again:"
-	read sv_ip
-done
-
-if [ $var3 != "true" ]; then
-	echo -e "Do you wish to proceed?"
-	select yn in "Yes" "No"; do
-		case $yn in
-			Yes ) break;;
-			No ) echo "Terminated by user"; exit;;
-		esac
-	done
-fi
-
 sv_network=${sv_ip%.*}
 sv_local=${sv_ip##*.}
 
@@ -242,8 +213,11 @@ echo -e "Error: Port not valid, please enter:"
 read cl_port
 done
 
+#Get target IP
+ip_re='^[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]$|^[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]\.[2]?[0-4]?[0-9]$|^[2]?[5]?[0-4]\.[2]?[5]?[0-4]\.[2]?[5]?[0-4]\.[2]?[5]?[0-4]$'
+
 while true; do 
-	echo -e "Please enter the external IP on VPN:"
+	echo -e "Please enter the target IP on VPN:"
 	read cl_ip
 	if [[ ! $cl_ip =~ $ip_re ]]; then
 	echo -e "This doesn't look like a valid address, please try again:"
@@ -266,6 +240,15 @@ while true; do
 done
 
 #Finalizing
+echo -e "Requests coming to $sv_ip:$sv_port on $sv_interface will be forwarded to $cl_ip:$cl_port on $wg_interface"
+
+echo -e "Do you wish to continue?"
+select yn in "Proceed" "Quit"; do
+    case $yn in
+        Proceed ) break;;
+        Quit ) echo "Terminated"; exit;;
+    esac
+done
 
 if [ conf != noufw ]; then
 ufw allow $sv_port
@@ -273,14 +256,12 @@ ufw route allow in on $sv_interface out on $wg_interface to $cl_ip port $cl_port
 fi
 
 wg-quick down $wg_interface
-
+echo -e "Please hold for a moment."
 sleep 5
-
-echo -e "Requests coming to port $sv_port will be forwarded to $cl_ip:$cl_port"
 
 insert="PostUp = iptables -t nat -A PREROUTING -i $sv_interface -p tcp --dport $sv_port -j DNAT --to-destination $cl_ip:$cl_port\nPostUp = iptables -A FORWARD -i $sv_interface -o $wg_interface -p tcp --syn --dport $sv_port -m conntrack --ctstate NEW -j ACCEPT\nPostUp = iptables -A FORWARD -i $sv_interface -o $wg_interface -p tcp --dport $sv_port -m conntrack --ctstate ESTABLISHED -j ACCEPT\nPostUp = iptables -A FORWARD -i $wg_interface -o $sv_interface -p tcp --sport $cl_port -m conntrack --ctstate ESTABLISHED -j ACCEPT\nPostUp = iptables -t nat -A POSTROUTING -o $wg_interface -p tcp --dport $sv_port -d $cl_ip -j SNAT --to-source $sv_ip"
 sed -i "/\[Interface\]/ a $insert" $file_path
 
 wg-quick up $wg_interface
 
-echo "${GREEN} Operation successful.${NC}"
+echo -e "${GREEN}Operation successful.${NC}"
