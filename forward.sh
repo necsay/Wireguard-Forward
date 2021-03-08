@@ -19,7 +19,7 @@ PS3="Please enter 1 or 2: "
 #Check if WireGuard is installed
 if ! command -v wg &> /dev/null
 then
-    echo -e "${RED}WARNING: WireGuard does not seem to be installed.${NC}\n"
+    echo -e "${RED}ERROR: WireGuard does not seem to be installed.${NC}\n"
     exit
 fi
 
@@ -39,7 +39,7 @@ do
 done < <(find /etc/wireguard -maxdepth 1 -name '*.conf')
 
 if [ "${all_paths[0]}" == "" ]; then
-    echo -e "${RED}Error: There doesn't seem to be any config files in /etc/wireguard\nThis script is only meant for forwarding ports on a working connection.${NC}"
+    echo -e "${RED}ERROR${NC}: There doesn't seem to be any config files in /etc/wireguard\nThis script is only meant for forwarding ports on a working connection."
     exit
 fi
 
@@ -78,12 +78,12 @@ wg_interface=${wg_conf%.*}  #remove right side of "."
 sysctl_state=$(sysctl -a | grep net.ipv4.ip_forward | grep -v 'update\|pmtu' | cut -d "=" -f2 | xargs)
 
 if [ $sysctl_state == "0" ]; then
-	echo -e "${RED}WARNING: ipv4 forwarding is not enabled${NC}"
+	echo -e "${RED}ERROR${NC}: ipv4 forwarding is not enabled"
 	echo -e "Do you wish to enable and continue?\nThe script will not continue unless ipv4 forwarding is enabled."
 	select yn in "Enable" "Quit"; do
 		case $yn in
 			Enable ) break;; 
-			Quit ) exit;;
+			Quit ) echo -e "Terminated by user"; exit;;
 		esac
 	done
 	echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/wireguard.conf
@@ -96,7 +96,7 @@ fi
 sysctl_state=$(sysctl -a | grep net.ipv4.ip_forward | grep -v 'update\|pmtu' | cut -d "=" -f2 | xargs)
 
 if [ $sysctl_state == "0" ]; then
-	echo -e "${RED}ERROR : Could not enable ipv4 forwarding.${NC}"
+	echo -e "${RED}ERROR${NC}: Could not enable ipv4 forwarding."
 	exit
 fi
 
@@ -105,12 +105,12 @@ fi
 conf="null"
 if ! command -v ufw &> /dev/null
 then
-    echo -e "${RED}WARNING : UFW not found${NC}"
+    echo -e "${RED}WARNING{NC}: UFW not found$"
     echo -e "Do you wish to continue?\nIf you install UFW after running this script, forwarding will be blocked."
 	select yn in "Continue" "Quit"; do
 	    case $yn in
 	        Continue ) conf="noufw"; break;;
-	        Quit ) echo "Terminated"; exit;;
+	        Quit ) echo -e "Terminated by user"; exit;;
 	    esac
 	done
 fi
@@ -120,10 +120,10 @@ fi
 if [ $conf != "noufw" ]; then
 	ufw=$(ufw status | grep -iF active |cut -d ":" -f2 | xargs | tr A-Z a-z)
 	if [ $ufw != "active" ]; then
-		echo -e "\n${ORANGE}WARNING : UFW is installed but not enabled.${NC}\n"
+		echo -e "\n${ORANGE}WARNING${NC}: UFW is installed but not enabled.\n"
 		echo -e "Do you wish to enable?"
 		echo -e "This script does not require UFW to be running."
-		echo -e "${ORANGE}WARNING: If you are using SSH you may lose your connection.${NC}"
+		echo -e "${ORANGE}WARNING${NC}: If you are using SSH you may lose your connection."
 		select yn in "Enable" "Continue"; do
 			case $yn in
 				Enable ) echo -e "${GREEN}"; ufw enable; echo -e "${NC}"; break;;
@@ -133,7 +133,7 @@ if [ $conf != "noufw" ]; then
 	fi
 	ufw=$(ufw status | grep -iF active |cut -d ":" -f2 | xargs | tr A-Z a-z)
 	if [ $ufw != "active" ]; then
-		echo -e "${ORANGE}Error : Sorry, UFW could not be enabled${NC}"
+		echo -e "${ORANGE}ERROR${NC}: Sorry, UFW could not be enabled."
 		exit
 	fi
 fi
@@ -164,7 +164,7 @@ done < <(ip link show | tr -d '[:blank:]' | awk 'FNR%2')
 
 
 if [ "${all_interfaces[0]}" == "" ]; then
-    echo -e "${RED}Error: There doesn't seem to be any network interfaces${NC}"
+    echo -e "${RED}ERROR${NC}: There doesn't seem to be any network interfaces."
     exit
 fi
 
@@ -219,21 +219,20 @@ ip_re='^[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-
 while true; do 
 	read -p "Please enter the target IP on VPN:" cl_ip
 	if [[ ! $cl_ip =~ $ip_re ]]; then
-	echo -e "${RED}Error${NC}: Not a valid address, please try again:"
-	read -p "Please enter the target IP on VPN:" cl_ip
+		echo -e "${RED}Error${NC}: Not a valid address, please try again:"
+		read -p "Please enter the target IP on VPN:" cl_ip
 	fi
 	cl_network=${cl_ip%.*}
 	cl_4th_octet=${cl_ip##*.}
 
 	if [ $cl_network != $sv_network ]; then
-	echo -e "${RED}WARNING: Server is on: $sv_network.x but client is on: $cl_network.x\nOperation out of scope of this script.${NC}"
-	echo -e "Please try entering a correct IP:"
-	continue
+		echo -e "${RED}Error${NC}: Server is on: $sv_network.x but client is on: $cl_network.x\nOperation out of scope of this script."
+		continue
 	fi
 	
 	if [ $cl_4th_octet == $sv_local ]; then
-	echo -e "${RED}WARNING: Server is: $sv_ip client is: $cl_ip Please enter a different IP for client:${NC}"
-	continue
+		echo -e "${RED}Error${NC}: Server is: $sv_ip client is: $cl_ip Source and target are the same.\nPlease try again."
+		continue
 	fi
 	break
 done
@@ -245,7 +244,7 @@ echo -e "Do you wish to continue?"
 select yn in "Proceed" "Quit"; do
     case $yn in
         Proceed ) break;;
-        Quit ) echo "Terminated"; exit;;
+        Quit ) echo "Terminated by user"; exit;;
     esac
 done
 
