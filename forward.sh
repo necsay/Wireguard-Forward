@@ -176,6 +176,8 @@ sv_local=${sv_ip##*.}
 
 # Get server public interface
 
+default_interface=$(ip r | awk '/^default/ {print $5}')
+echo -e "Your default interface is $default_interface"
 
 declare -a all_interfaces=()
 
@@ -204,7 +206,7 @@ for i in "${all_interfaces[@]}"
 	echo -e "$cnter)$i"
 done
 	
-read -p "Please select your config file:" sl_nt
+read -p "Please select your public IP interface:" sl_nt
 
 while [[ ! $sl_nt =~ $sel_re ]]; do
 	
@@ -216,7 +218,7 @@ while [[ ! $sl_nt =~ $sel_re ]]; do
 		echo -e "$cnter)${i##*/}"
 	done
 	
-	read -p "Please select your config file:" sl_nt
+	read -p "Please select your public IP interface:" sl_nt
 	
 done
 	
