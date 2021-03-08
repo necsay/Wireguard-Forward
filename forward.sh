@@ -147,6 +147,11 @@ sv_ip=$(grep -iF "Address" $file_path |  grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0
 sv_network=${sv_ip%.*}
 sv_local=${sv_ip##*.}
 
+if [[ ! "$sv_ip" =~ $ip_re ]]; then
+		echo -e "${RED}ERROR${NC}: Your IP configuration in $wg_conf is not valid:"
+		exit
+fi
+
 # Get server public interface
 
 default_interface=$(ip r | awk '/^default/ {print $5}')
