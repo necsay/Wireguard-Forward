@@ -56,7 +56,7 @@ read -p "Please select your config file:" sl_cf
 
 while [[ ! $sl_cf =~ $sel_re ]]; do
 	
-	echo -e "${RED}Error${RED}: Wrong input please try again."
+	echo -e "${RED}Error${NC}: Wrong input please try again."
 	cnter=0
 	for i in "${all_paths[@]}"
 		do
