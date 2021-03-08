@@ -12,6 +12,7 @@ NC='\033[0m'
 GREEN='\033[0;42m'
 ORANGE='\033[0;43m'
 
+PS3="Please enter 1 or 2: "
 
 
 
@@ -23,44 +24,54 @@ then
 fi
 
 #Set up path for conf file
-file_path="/etc/wireguard/wg0.conf"
-wg_conf="wg0.conf"
-wg_interface="wg0"
+declare -a all_paths=()
 
-var1="void"
-while [ $var1 != "yes" ]; do
-	echo -e "Using the default path: $file_path for conf file."
-	echo -e "Please enter 1 or 2"
-	var2="void"
-	select yn in "Confirm" "Change"; do
-		case $yn in
-			Confirm ) break;;
-			Change ) var2="change"; file_path="void"; break;;
-		esac
-	done
+space_re=" |'"
 
-	if [ $var2 == "change" ]; then
-		echo -e "Please enter Wireguard Config file full path:"
-		read file_path
-	fi
-	
-	while [ ! -e $file_path ] ; do
-		echo -e "${RED}Config file does not exist!\nPlease enter:${NC}"
-		read file_path
-	done
-	wg_conf=${file_path##*/}
-	wg_interface=${wg_conf%.*}
-	echo -e "Your config path is: $file_path"
-	echo -e "Your WireGuard config file is = $wg_conf"
-	echo -e "Your WireGuard interface is = $wg_interface"
-	echo -e "Do you wish to proceed?"
-	select yn in "Yes" "No"; do
-		case $yn in
-			Yes ) var1="yes"; break;;
-			No ) var1="void"; exit;;
-		esac
-	done
+while read -r line
+do
+	test=${line##*/}
+    if [[ ! $test =~ $space_re ]]; then
+	all_paths+=("$line")
+    else
+    echo -e "Skipping $line \nReason: No spaces allowed in config file."
+    fi
+done < <(find /etc/wireguard -maxdepth 1 -name '*.conf')
+
+if [ "${all_paths[0]}" == "" ]; then
+    echo -e "Error: There doesn't seem to be any config files in /etc/wireguard\nThis script is only meant for forwarding ports on a working connection."
+    exit
+fi
+
+sel_re="^[1-${#all_paths[@]}]$"
+
+cnter=0
+for i in "${all_paths[@]}"
+	do
+	cnter=$((cnter+1))
+	echo -e "$cnter)${i##*/}"
 done
+	
+read -p "Please select your config file:" sl_cf
+
+while [[ ! $sl_cf =~ $sel_re ]]; do
+	
+	echo -e "Error: Wrong input please try again."
+	cnter=0
+	for i in "${all_paths[@]}"
+		do
+		cnter=$((cnter+1))
+		echo -e "$cnter)${i##*/}"
+	done
+	
+	read -p "Please select your config file:" sl_cf
+	
+done
+	
+sl_cf=$((sl_cf-1))
+file_path=${all_paths[$sl_cf]}
+wg_conf=${file_path##*/} #remove left side of "/" all chars
+wg_interface=${wg_conf%.*}  #remove right side of "."
 
 # Check forwarding and enable
 
@@ -69,7 +80,6 @@ sysctl_state=$(sysctl -a | grep net.ipv4.ip_forward | grep -v 'update\|pmtu' | c
 if [ $sysctl_state == "0" ]; then
 	echo -e "${RED}WARNING: ipv4 forwarding is not enabled${NC}"
 	echo -e "Do you wish to enable and continue?\nThe script will not continue unless ipv4 forwarding is enabled."
-	echo -e "Please enter 1 or 2"
 	select yn in "Yes" "No"; do
 		case $yn in
 			Yes ) break;; 
@@ -97,7 +107,6 @@ if ! command -v ufw &> /dev/null
 then
     echo -e "\n${RED}WARNING : UFW not found${NC}"
     echo -e "Do you wish to continue?\nIf you install UFW after running this script, forwarding will be blocked."
-    echo -e "Please enter 1 or 2"
 	select yn in "Yes" "No"; do
 	    case $yn in
 	        Yes ) conf="noufw"; break;;
@@ -114,7 +123,6 @@ if [ $conf != "noufw" ]; then
 		echo -e "\n${ORANGE}WARNING : UFW is installed but not enabled.${NC}\n"
 		echo -e "Do you wish to enable?"
 		echo -e "This script does not require UFW to be running."
-		echo -e "Please enter 1 or 2"
 		select yn in "Yes" "No"; do
 			case $yn in
 				Yes ) echo -e "${GREEN}"; ufw enable; echo -e "${NC}"; break;;
@@ -135,7 +143,6 @@ ip_re='^[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-9]\.[0-1]?[0-9]?[0-
 var3="false"
 sv_ip=$(grep -iF "Address" $file_path |  grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
 	echo -e "Your vpn address is $sv_ip"
-	echo -e "Please enter 1 or 2"
 	select yn in "Correct" "Incorrect"; do
 		case $yn in
 			Correct ) var3="true"; break;;
@@ -171,7 +178,6 @@ sv_local=${sv_ip##*.}
 
 sv_interface=$(ip r | awk '/^default/ {print $5}')
 	echo -e "Your public IP interface is $sv_interface"
-	echo -e "Please enter 1 or 2"
 	select yn in "Correct" "Incorrect"; do
 		case $yn in
 			Correct ) cor="true";break;;
@@ -244,13 +250,6 @@ wg-quick down $wg_interface
 sleep 5
 
 echo -e "Requests coming to port $sv_port will be forwarded to $cl_ip:$cl_port"
-echo -e "Do you wish to proceed?"
-select yn in "Yes" "No"; do
-	case $yn in
-		Yes ) break;;
-		No ) echo -e "Terminated by user; exit;;
-	esac
-done
 
 insert="PostUp = iptables -t nat -A PREROUTING -i $sv_interface -p tcp --dport $sv_port -j DNAT --to-destination $cl_ip:$cl_port\nPostUp = iptables -A FORWARD -i $sv_interface -o $wg_interface -p tcp --syn --dport $sv_port -m conntrack --ctstate NEW -j ACCEPT\nPostUp = iptables -A FORWARD -i $sv_interface -o $wg_interface -p tcp --dport $sv_port -m conntrack --ctstate ESTABLISHED -j ACCEPT\nPostUp = iptables -A FORWARD -i $wg_interface -o $sv_interface -p tcp --sport $cl_port -m conntrack --ctstate ESTABLISHED -j ACCEPT\nPostUp = iptables -t nat -A POSTROUTING -o $wg_interface -p tcp --dport $sv_port -d $cl_ip -j SNAT --to-source $sv_ip"
 sed -i "/\[Interface\]/ a $insert" $file_path
@@ -258,7 +257,3 @@ sed -i "/\[Interface\]/ a $insert" $file_path
 wg-quick up $wg_interface
 
 echo "${GREEN} Operation successful.${NC}"
-
-
-
-
