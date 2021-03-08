@@ -17,6 +17,4 @@ To do:
 <ol>
   <li>Logs.</li>
   <li>Rolling back changes.</li>
-  <li>Graphical/Selectible cli.</li>
-  <li>Interface management.</li>
 </ol>
