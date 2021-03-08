@@ -186,7 +186,7 @@ sv_interface=$(ip r | awk '/^default/ {print $5}')
 		esac
 	done
 
-if [ $cor != "true" ]; then
+if [ "$cor" != "true" ]; then
 	echo -e "Sorry, please enter interface manually:"
 	read sv_ip
 	echo -e "You have entered $sv_interface"
