@@ -123,6 +123,7 @@ if [ $conf != "noufw" ]; then
 		echo -e "\n${ORANGE}WARNING : UFW is installed but not enabled.${NC}\n"
 		echo -e "Do you wish to enable?"
 		echo -e "This script does not require UFW to be running."
+		echo -e "${ORANGE}WARNING: If you are using SSH you may lose your connection.${NC}"
 		select yn in "Yes" "No"; do
 			case $yn in
 				Yes ) echo -e "${GREEN}"; ufw enable; echo -e "${NC}"; break;;
