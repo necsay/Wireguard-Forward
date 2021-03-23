@@ -257,7 +257,7 @@ done
 
 if [ conf != noufw ]; then
 ufw allow $sv_port
-ufw route allow in on $sv_interface out on $wg_interface to $cl_ip port $cl_port proto tcp
+ufw route allow in on $sv_interface out on $wg_interface to $cl_ip port $cl_port
 fi
 
 wg-quick down $wg_interface
