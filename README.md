@@ -15,6 +15,6 @@
 
 To do:
 <ol>
-  <li>Logs.</li>
-  <li>Rolling back changes.</li>
+  <li>Work on UDP</li>
+  <li>Work on ipv6</li>
 </ol>
